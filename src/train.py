@@ -93,8 +93,9 @@ def train_and_log_model(X_train, y_train, X_test, y_test, preprocessor, model, m
         print(f"[{model_name}] Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
 
 if __name__ == "__main__":
-    print("Loading Data...")
-    df = load_data("dataset/Travel.csv")
+    print("Loading Data from S3 Bucket (predict-1)...")
+    # Stream directly from S3!
+    df = load_data("s3://predict-1/raw-data/Travel.csv")
     
     print("Preprocessing...")
     X, y, preprocessor = preprocess_data(df)
