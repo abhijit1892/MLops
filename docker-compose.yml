@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mlflow:
+    image: python:3.9-slim
+    ports:
+      - "5000:5000"
+    working_dir: /mlflow
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: >
+      bash -c "pip install mlflow boto3 && mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://predict-1/ --host 0.0.0.0"
+    volumes:
+      - mlflow_data:/mlflow
+
+  train:
+    build: .
+    depends_on:
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: python src/train.py
+    volumes:
+      - .:/app
+
+  ui:
+    build: .
+    depends_on:
+      - train
+    ports:
+      - "8501:8501"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: streamlit run src/app.py --server.port=8501 --server.address=0.0.0.0
+    restart: always
+
+volumes:
+  mlflow_data:
