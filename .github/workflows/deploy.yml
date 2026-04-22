@@ -24,13 +24,24 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
         script: |
-          # 1. Ensure project directory exists
+          # 1. Install Docker and Docker-compose automatically if missing
+          if ! command -v docker-compose &> /dev/null
+          then
+              echo "Installing Docker..."
+              sudo apt-get update
+              sudo apt-get install -y docker.io docker-compose git
+              sudo systemctl enable docker
+              sudo systemctl start docker
+              sudo usermod -aG docker $USER
+          fi
+          
+          # 2. Ensure project directory exists
           mkdir -p /home/${{ secrets.EC2_USERNAME }}/MLops
           cd /home/${{ secrets.EC2_USERNAME }}/MLops
           
-          # 2. Setup git repository if it doesn't exist, else pull latest
+          # 3. Setup git repository using HTTPS to avoid SSH host key errors
           if [ ! -d ".git" ]; then
-            git clone git@github.com:${{ github.repository }}.git .
+            git clone https://github.com/${{ github.repository }}.git .
           else
             git pull origin main
           fi
