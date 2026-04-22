@@ -39,11 +39,15 @@ jobs:
           mkdir -p /home/${{ secrets.EC2_USERNAME }}/MLops
           cd /home/${{ secrets.EC2_USERNAME }}/MLops
           
-          # 3. Setup git repository using HTTPS to avoid SSH host key errors
+          # 3. Force sync repository securely (bypass directory-not-empty errors)
           if [ ! -d ".git" ]; then
-            git clone https://github.com/${{ github.repository }}.git .
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+            git fetch --all
+            git reset --hard origin/main
           else
-            git pull origin main
+            git fetch --all
+            git reset --hard origin/main
           fi
           
           # 3. Create .env file for AWS credentials to be used by docker-compose
